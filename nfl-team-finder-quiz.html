@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Your NFL Team</title>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0d0d0d;
+  --surface:#161616;
+  --surface2:#1f1f1f;
+  --border:#2a2a2a;
+  --gold:#f5c842;
+  --gold2:#e6a800;
+  --white:#f5f0e8;
+  --muted:#888;
+  --red:#e63946;
+  --green:#52b788;
+  --radius:12px;
+}
+
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* BG TEXTURE */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,200,66,0.08) 0%, transparent 60%),
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap{max-width:780px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1;}
+
+/* HEADER */
+.quiz-header{text-align:center;padding:50px 0 40px;}
+.quiz-header .tag{
+  display:inline-block;
+  font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);border:1px solid rgba(245,200,66,0.3);
+  padding:5px 14px;border-radius:20px;margin-bottom:20px;
+  background:rgba(245,200,66,0.05);
+}
+.quiz-header h1{
+  font-family:'Alfa Slab One',serif;
+  font-size:clamp(38px,8vw,72px);
+  line-height:1;
+  color:var(--white);
+  letter-spacing:-1px;
+}
+.quiz-header h1 em{color:var(--gold);font-style:normal;}
+.quiz-header p{
+  margin-top:16px;font-size:17px;color:var(--muted);
+  max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6;
+}
+
+/* PROGRESS */
+.progress-wrap{margin-bottom:36px;}
+.progress-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.progress-label{font-size:13px;color:var(--muted);font-weight:500;}
+.progress-num{font-family:'Alfa Slab One',serif;font-size:20px;color:var(--gold);}
+.progress-bar{
+  height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));
+  border-radius:4px;transition:width 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+/* QUESTION CARD */
+.q-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:36px;
+  animation:slideIn 0.35s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideIn{
+  from{opacity:0;transform:translateY(18px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+.q-emoji{font-size:40px;margin-bottom:16px;display:block;}
+.q-text{
+  font-family:'Alfa Slab One',serif;
+  font-size:clamp(20px,4vw,28px);
+  line-height:1.25;
+  margin-bottom:8px;
+  color:var(--white);
+}
+.q-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
+
+/* OPTIONS GRID */
+.options{display:grid;gap:12px;}
+.options.cols-2{grid-template-columns:1fr 1fr;}
+.options.cols-3{grid-template-columns:1fr 1fr 1fr;}
+
+.opt{
+  background:var(--surface2);
+  border:2px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  cursor:pointer;
+  transition:all 0.18s;
+  text-align:left;
+  display:flex;align-items:center;gap:12px;
+  font-family:'DM Sans',sans-serif;
+  color:var(--white);
+  font-size:15px;font-weight:500;
+  line-height:1.3;
+  position:relative;
+  overflow:hidden;
+}
+.opt::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(245,200,66,0.06),transparent);
+  opacity:0;transition:opacity 0.18s;
+}
+.opt:hover{border-color:rgba(245,200,66,0.5);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.4);}
+.opt:hover::before{opacity:1;}
+.opt.selected{
+  border-color:var(--gold);
+  background:rgba(245,200,66,0.08);
+  box-shadow:0 0 0 1px var(--gold), 0 6px 24px rgba(245,200,66,0.1);
+}
+.opt.selected::before{opacity:1;}
+.opt-icon{font-size:26px;flex-shrink:0;}
+.opt-text{}
+.opt-text strong{display:block;font-size:15px;}
+.opt-text span{font-size:13px;color:var(--muted);font-weight:400;}
+
+/* NAV */
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:12px;}
+.btn{
+  font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;
+  padding:13px 28px;border-radius:var(--radius);border:none;cursor:pointer;
+  transition:all 0.18s;letter-spacing:0.3px;
+}
+.btn-back{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.btn-back:hover{color:var(--white);border-color:var(--muted);}
+.btn-next{
+  background:var(--gold);color:#0d0d0d;margin-left:auto;
+  box-shadow:0 4px 20px rgba(245,200,66,0.25);
+}
+.btn-next:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 6px 28px rgba(245,200,66,0.35);}
+.btn-next:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* COUNTRY SELECT */
+.country-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;
+}
+.country-opt{
+  background:var(--surface2);border:2px solid var(--border);border-radius:10px;
+  padding:12px 10px;cursor:pointer;text-align:center;transition:all 0.18s;
+  font-size:13px;font-weight:500;color:var(--white);
+}
+.country-opt:hover{border-color:rgba(245,200,66,0.4);transform:translateY(-2px);}
+.country-opt.selected{border-color:var(--gold);background:rgba(245,200,66,0.08);}
+.country-flag{font-size:24px;display:block;margin-bottom:6px;}
+
+/* RESULT */
+.result-wrap{animation:slideIn 0.5s cubic-bezier(.4,0,.2,1);}
+.result-podium{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:24px;
+}
+.result-banner{
+  padding:40px 36px 32px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.result-banner::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%, var(--team-color1,rgba(245,200,66,0.2)) 0%, transparent 70%);
+}
+.result-rank{
+  font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:14px;position:relative;
+}
+.result-team-name{
+  font-family:'Alfa Slab One',serif;
+  font-size:clamp(32px,7vw,56px);
+  line-height:1;color:var(--white);
+  position:relative;margin-bottom:6px;
+}
+.result-team-nick{
+  font-size:15px;color:var(--muted);position:relative;margin-bottom:20px;
+}
+.result-colors{display:flex;gap:8px;justify-content:center;position:relative;margin-bottom:16px;}
+.color-swatch{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);}
+.result-emoji{font-size:48px;display:block;position:relative;}
+
+.result-details{padding:0 36px 36px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.detail-card{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;
+}
+.detail-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.detail-val{font-size:14px;color:var(--white);line-height:1.5;}
+.detail-val strong{color:var(--gold);}
+
+.runner-up-section{margin-top:6px;}
+.runner-up-label{font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+.runner-up-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ru-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;display:flex;gap:12px;align-items:center;cursor:pointer;
+  transition:all 0.18s;
+}
+.ru-card:hover{border-color:rgba(245,200,66,0.4);transform:translateY(-2px);}
+.ru-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.ru-name{font-weight:700;font-size:14px;color:var(--white);}
+.ru-sub{font-size:12px;color:var(--muted);}
+
+.restart-btn{
+  display:block;width:100%;text-align:center;
+  background:transparent;color:var(--muted);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;
+  margin-top:16px;transition:all 0.18s;
+}
+.restart-btn:hover{color:var(--white);border-color:var(--muted);}
+
+.gmp-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(82,183,136,0.1);border:1px solid rgba(82,183,136,0.3);
+  color:var(--green);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:5px 12px;border-radius:20px;margin-top:8px;
+}
+
+.score-bar-wrap{margin-top:4px;}
+.score-bar{height:3px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px;}
+.score-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:3px;}
+
+@media(max-width:560px){
+  .q-card{padding:24px 18px;}
+  .options.cols-2,.options.cols-3{grid-template-columns:1fr;}
+  .result-details{grid-template-columns:1fr;}
+  .runner-up-cards{grid-template-columns:1fr;}
+  .country-grid{grid-template-columns:repeat(3,1fr);}
+  .result-banner{padding:28px 20px 24px;}
+  .result-details{padding:0 20px 24px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="quiz-header" id="quizHeader">
+    <div class="tag">🏈 NFL Fan Finder</div>
+    <h1>Find Your <em>NFL Team</em></h1>
+    <p>Answer 10 quick questions and we'll match you with the perfect NFL franchise — based on your style, personality, and where you're from.</p>
+  </div>
+
+  <div id="quizArea"></div>
+
+</div>
+
+<script>
+// ─── TEAM DATA ───────────────────────────────────────────────────────────────
+const TEAMS = {
+  "Kansas City Chiefs": {
+    conf:"AFC",div:"West",city:"Kansas City",colors:["#E31837","#FFB81C"],emoji:"👑",
+    mascotType:"fierce",colorTags:["red","gold"],
+    weather:"cold",size:"big",vibe:"dynasty",
+    soccerEq:"Manchester City",soccerLeague:"Premier League",
+    gmp:["Spain","Ireland","UK"],
+    style:"Offensive powerhouse. Patrick Mahomes era. Multiple Super Bowls. The team everyone loves to beat.",
+    underdog:false,building:false
+  },
+  "Philadelphia Eagles": {
+    conf:"NFC",div:"East",city:"Philadelphia",colors:["#004C54","#A5ACAF"],emoji:"🦅",
+    mascotType:"fierce",colorTags:["green","silver"],
+    weather:"cold",size:"big",vibe:"passionate",
+    soccerEq:"Leeds United",soccerLeague:"Championship/PL",
+    gmp:["Brazil"],
+    style:"Hardcore fans. Gritty identity. One of the loudest stadiums in the NFL.",
+    underdog:false,building:false
+  },
+  "San Francisco 49ers": {
+    conf:"NFC",div:"West",city:"San Francisco",colors:["#AA0000","#B3995D"],emoji:"⛏️",
+    mascotType:"historical",colorTags:["red","gold"],
+    weather:"mild",size:"big",vibe:"class",
+    soccerEq:"AC Milan",soccerLeague:"Serie A",
+    gmp:["Australia","Canada","Japan","South Korea","UAE"],
+    style:"Historic franchise. Beautiful offensive football. Loyal fanbase with Silicon Valley energy.",
+    underdog:false,building:false
+  },
+  "Dallas Cowboys": {
+    conf:"NFC",div:"East",city:"Dallas",colors:["#003594","#869397"],emoji:"⭐",
+    mascotType:"cultural",colorTags:["blue","silver"],
+    weather:"hot",size:"big",vibe:"glamour",
+    soccerEq:"Real Madrid",soccerLeague:"La Liga",
+    gmp:["Mexico"],
+    style:"America's Team. Biggest brand in the NFL. Massive global fanbase. Celebrity culture.",
+    underdog:false,building:false
+  },
+  "Green Bay Packers": {
+    conf:"NFC",div:"North",city:"Green Bay",colors:["#203731","#FFB612"],emoji:"🧀",
+    mascotType:"cultural",colorTags:["green","gold"],
+    weather:"cold",size:"big",vibe:"tradition",
+    soccerEq:"FC Barcelona",soccerLeague:"La Liga",
+    gmp:["Germany","Ireland","UK"],
+    style:"Unique fan-owned team. Legendary history. Aaron Rodgers legacy. The frozen tundra.",
+    underdog:false,building:false
+  },
+  "New England Patriots": {
+    conf:"AFC",div:"East",city:"Boston",colors:["#002244","#C60C30"],emoji:"🏛️",
+    mascotType:"historical",colorTags:["blue","red"],
+    weather:"cold",size:"big",vibe:"dynasty",
+    soccerEq:"Bayern Munich",soccerLeague:"Bundesliga",
+    gmp:["Austria","Germany","Switzerland","Brazil"],
+    style:"Most successful franchise of the 2000s. Brady era glory. Rebuilding a new identity now.",
+    underdog:false,building:true
+  },
+  "Buffalo Bills": {
+    conf:"AFC",div:"East",city:"Buffalo",colors:["#00338D","#C60C30"],emoji:"🦬",
+    mascotType:"fierce",colorTags:["blue","red"],
+    weather:"cold",size:"mid",vibe:"passionate",
+    soccerEq:"Liverpool",soccerLeague:"Premier League",
+    gmp:["Canada"],
+    style:"Passionate Mafia fanbase. Josh Allen is a superstar. Hungry for their first Super Bowl.",
+    underdog:true,building:false
+  },
+  "Baltimore Ravens": {
+    conf:"AFC",div:"North",city:"Baltimore",colors:["#241773","#9E7C0C"],emoji:"🐦‍⬛",
+    mascotType:"fierce",colorTags:["purple","gold"],
+    weather:"cold",size:"mid",vibe:"gritty",
+    soccerEq:"Atletico Madrid",soccerLeague:"La Liga",
+    gmp:["UK"],
+    style:"Hard-nosed football. Lamar Jackson era. Defensive DNA. Purple pride.",
+    underdog:false,building:false
+  },
+  "Miami Dolphins": {
+    conf:"AFC",div:"East",city:"Miami",colors:["#008E97","#FC4C02"],emoji:"🐬",
+    mascotType:"friendly",colorTags:["blue","orange"],
+    weather:"hot",size:"mid",vibe:"fun",
+    soccerEq:"Napoli",soccerLeague:"Serie A",
+    gmp:["UK","Spain","Brazil","Argentina","Colombia","Mexico"],
+    style:"Speed. Style. South Beach. One of the most exciting offenses in football. Perpetual sunshine.",
+    underdog:false,building:false
+  },
+  "Jacksonville Jaguars": {
+    conf:"AFC",div:"South",city:"Jacksonville",colors:["#006778","#9F792C"],emoji:"🐆",
+    mascotType:"fierce",colorTags:["blue","gold"],
+    weather:"hot",size:"small",vibe:"underdog",
+    soccerEq:"Brighton & Hove Albion",soccerLeague:"Premier League",
+    gmp:["UK"],
+    style:"London's adopted team. Annual Wembley games. Building something exciting. Trevor Lawrence.",
+    underdog:true,building:true
+  },
+  "Chicago Bears": {
+    conf:"NFC",div:"North",city:"Chicago",colors:["#0B162A","#C83803"],emoji:"🐻",
+    mascotType:"fierce",colorTags:["blue","orange"],
+    weather:"cold",size:"big",vibe:"gritty",
+    soccerEq:"Tottenham Hotspur",soccerLeague:"Premier League",
+    gmp:["Canada"],
+    style:"Oldest franchise. Iconic. Rebuilding with Caleb Williams. Loyal fanbase in one of America's great cities.",
+    underdog:false,building:true
+  },
+  "Minnesota Vikings": {
+    conf:"NFC",div:"North",city:"Minnesota",colors:["#4F2683","#FFC62F"],emoji:"🪖",
+    mascotType:"historical",colorTags:["purple","gold"],
+    weather:"cold",size:"mid",vibe:"passionate",
+    soccerEq:"Borussia Dortmund",soccerLeague:"Bundesliga",
+    gmp:["Norway","Sweden","Denmark","Finland"],
+    style:"Beloved franchise. Scandinavian heritage. Electric atmosphere at US Bank Stadium. Near misses.",
+    underdog:true,building:false
+  },
+  "Seattle Seahawks": {
+    conf:"NFC",div:"West",city:"Seattle",colors:["#002244","#69BE28"],emoji:"🦅",
+    mascotType:"fierce",colorTags:["blue","green"],
+    weather:"cold",size:"mid",vibe:"loud",
+    soccerEq:"Celtic FC",soccerLeague:"Scottish Premiership",
+    gmp:["Canada","Austria","Germany","Switzerland","Australia","New Zealand"],
+    style:"12th Man culture. Loudest stadium. Rain city grunge energy. Rebuilding post-Wilson.",
+    underdog:false,building:true
+  },
+  "Denver Broncos": {
+    conf:"AFC",div:"West",city:"Denver",colors:["#FB4F14","#002244"],emoji:"🐎",
+    mascotType:"fierce",colorTags:["orange","blue"],
+    weather:"cold",size:"mid",vibe:"gritty",
+    soccerEq:"Feyenoord",soccerLeague:"Eredivisie",
+    gmp:["Netherlands"],
+    style:"Mile High altitude. Broncos Country. Peyton Manning dynasty. New era building now.",
+    underdog:false,building:true
+  },
+  "Pittsburgh Steelers": {
+    conf:"AFC",div:"North",city:"Pittsburgh",colors:["#FFB612","#101820"],emoji:"⚙️",
+    mascotType:"industrial",colorTags:["gold","black"],
+    weather:"cold",size:"big",vibe:"gritty",
+    soccerEq:"Juventus",soccerLeague:"Serie A",
+    gmp:["Ireland","Germany","Mexico"],
+    style:"6 Super Bowls. Steel Curtain legacy. Towel-waving Steeler Nation. The most global NFL fanbase.",
+    underdog:false,building:false
+  },
+  "Las Vegas Raiders": {
+    conf:"AFC",div:"West",city:"Las Vegas",colors:["#A5ACAF","#000000"],emoji:"☠️",
+    mascotType:"edgy",colorTags:["silver","black"],
+    weather:"hot",size:"mid",vibe:"rebel",
+    soccerEq:"Inter Milan",soccerLeague:"Serie A",
+    gmp:["Mexico","Australia","New Zealand"],
+    style:"Just Win Baby. Outlaw culture. The most rebellious brand in sports. Vegas glam + blue collar grit.",
+    underdog:false,building:true
+  },
+  "Los Angeles Rams": {
+    conf:"NFC",div:"West",city:"Los Angeles",colors:["#003594","#FFA300"],emoji:"🐏",
+    mascotType:"fierce",colorTags:["blue","gold"],
+    weather:"hot",size:"big",vibe:"glamour",
+    soccerEq:"Paris Saint-Germain",soccerLeague:"Ligue 1",
+    gmp:["Australia","China","Mexico","New Zealand","South Korea","Japan","UAE"],
+    style:"Hollywood swagger. Super Bowl 56 champs. Star-studded roster philosophy. McVay offensive genius.",
+    underdog:false,building:false
+  },
+  "Detroit Lions": {
+    conf:"NFC",div:"North",city:"Detroit",colors:["#0076B6","#B0B7BC"],emoji:"🦁",
+    mascotType:"fierce",colorTags:["blue","silver"],
+    weather:"cold",size:"mid",vibe:"underdog",
+    soccerEq:"Aston Villa",soccerLeague:"Premier League",
+    gmp:["Brazil"],
+    style:"America's comeback story. Long-suffering fans finally seeing glory. Dan Campbell's gritty culture.",
+    underdog:true,building:false
+  },
+  "Cincinnati Bengals": {
+    conf:"AFC",div:"North",city:"Cincinnati",colors:["#FB4F14","#000000"],emoji:"🐯",
+    mascotType:"fierce",colorTags:["orange","black"],
+    weather:"cold",size:"mid",vibe:"cool",
+    soccerEq:"Bayer Leverkusen",soccerLeague:"Bundesliga",
+    gmp:["Canada"],
+    style:"Who Dey! Joe Burrow and Ja'Marr Chase. Fashion-forward players. Hip young franchise on the rise.",
+    underdog:false,building:false
+  },
+  "New York Giants": {
+    conf:"NFC",div:"East",city:"New York",colors:["#0B2265","#A71930"],emoji:"🗽",
+    mascotType:"historical",colorTags:["blue","red"],
+    weather:"cold",size:"big",vibe:"history",
+    soccerEq:"Arsenal",soccerLeague:"Premier League",
+    gmp:["UK"],
+    style:"New York royalty. Lawrence Taylor. Eli Manning upsets. Rebuilding in the biggest market.",
+    underdog:false,building:true
+  },
+  "New York Jets": {
+    conf:"AFC",div:"East",city:"New York",colors:["#125740","#000000"],emoji:"✈️",
+    mascotType:"cool",colorTags:["green","white"],
+    weather:"cold",size:"mid",vibe:"hopeful",
+    soccerEq:"West Ham United",soccerLeague:"Premier League",
+    gmp:["UK","Ireland"],
+    style:"Long-suffering fans. Aaron Rodgers era. Gang Green culture. One of sport's great lovable underdogs.",
+    underdog:true,building:false
+  },
+  "Tennessee Titans": {
+    conf:"AFC",div:"South",city:"Nashville",colors:["#0C2340","#4B92DB"],emoji:"⚡",
+    mascotType:"fierce",colorTags:["blue","red"],
+    weather:"mild",size:"mid",vibe:"gritty",
+    soccerEq:"Newcastle United",soccerLeague:"Premier League",
+    gmp:["Ireland"],
+    style:"Music City football. Physical, run-first mentality. Derrick Henry legacy. Rebuilding with new QB.",
+    underdog:false,building:true
+  },
+  "Carolina Panthers": {
+    conf:"NFC",div:"South",city:"Charlotte",colors:["#0085CA","#101820"],emoji:"🐈",
+    mascotType:"fierce",colorTags:["blue","black"],
+    weather:"mild",size:"mid",vibe:"building",
+    soccerEq:"Crystal Palace",soccerLeague:"Premier League",
+    gmp:["UK"],
+    style:"Keep Pounding. Young Bryce Young. Rebuilding with patience. Charlotte's heart and pride.",
+    underdog:true,building:true
+  },
+  "Arizona Cardinals": {
+    conf:"NFC",div:"West",city:"Arizona",colors:["#97233F","#FFB612"],emoji:"🐦",
+    mascotType:"fierce",colorTags:["red","gold"],
+    weather:"hot",size:"mid",vibe:"building",
+    soccerEq:"Sevilla FC",soccerLeague:"La Liga",
+    gmp:["Mexico","Canada"],
+    style:"Desert football. Kyler Murray comeback story. Building a young core in the Sun Belt.",
+    underdog:true,building:true
+  },
+  "Atlanta Falcons": {
+    conf:"NFC",div:"South",city:"Atlanta",colors:["#A71930","#000000"],emoji:"🦅",
+    mascotType:"fierce",colorTags:["red","black"],
+    weather:"hot",size:"mid",vibe:"flashy",
+    soccerEq:"AS Roma",soccerLeague:"Serie A",
+    gmp:["UK"],
+    style:"Dirty Bird culture. Michael Vick legacy. Kirk Cousins era. The city of Atlanta runs through the Falcons.",
+    underdog:false,building:false
+  },
+  "New Orleans Saints": {
+    conf:"NFC",div:"South",city:"New Orleans",colors:["#D3BC8D","#101820"],emoji:"⚜️",
+    mascotType:"cultural",colorTags:["gold","black"],
+    weather:"hot",size:"mid",vibe:"culture",
+    soccerEq:"Olympique de Marseille",soccerLeague:"Ligue 1",
+    gmp:["France"],
+    style:"Who Dat! The most unique football culture. Drew Brees legacy. Mardi Gras energy every game day.",
+    underdog:false,building:true
+  },
+  "Tampa Bay Buccaneers": {
+    conf:"NFC",div:"South",city:"Tampa Bay",colors:["#D50A0A","#34302B"],emoji:"🏴‍☠️",
+    mascotType:"edgy",colorTags:["red","pewter"],
+    weather:"hot",size:"mid",vibe:"wild",
+    soccerEq:"Porto",soccerLeague:"Primeira Liga",
+    gmp:["Spain"],
+    style:"Tom Brady's legacy home. Pirate ship at Raymond James. Wild fanbase. Baker Mayfield resurgence.",
+    underdog:false,building:false
+  },
+  "Washington Commanders": {
+    conf:"NFC",div:"East",city:"Washington DC",colors:["#5A1414","#FFB612"],emoji:"🦅",
+    mascotType:"fierce",colorTags:["burgundy","gold"],
+    weather:"cold",size:"mid",vibe:"rising",
+    soccerEq:"Benfica",soccerLeague:"Primeira Liga",
+    gmp:["UAE"],
+    style:"Nation's capital team. Fresh identity, new ownership. Jayden Daniels era. The Commanders are rising.",
+    underdog:false,building:false
+  },
+  "Indianapolis Colts": {
+    conf:"AFC",div:"South",city:"Indianapolis",colors:["#002C5F","#A2AAAD"],emoji:"🐴",
+    mascotType:"fierce",colorTags:["blue","white"],
+    weather:"cold",size:"mid",vibe:"classic",
+    soccerEq:"Lazio",soccerLeague:"Serie A",
+    gmp:["Germany","Austria","Switzerland"],
+    style:"Peyton Manning's house. Anthony Richardson upside. Solid Midwestern fanbase. Colts tradition.",
+    underdog:false,building:true
+  },
+  "Houston Texans": {
+    conf:"AFC",div:"South",city:"Houston",colors:["#03202F","#A71930"],emoji:"🤠",
+    mascotType:"cultural",colorTags:["navy","red"],
+    weather:"hot",size:"mid",vibe:"rising",
+    soccerEq:"Ajax",soccerLeague:"Eredivisie",
+    gmp:["Mexico"],
+    style:"C.J. Stroud breakout star. Will Anderson defensive anchor. Houston is becoming an NFL powerhouse.",
+    underdog:false,building:false
+  },
+  "Los Angeles Chargers": {
+    conf:"AFC",div:"West",city:"Los Angeles",colors:["#0080C6","#FFC20E"],emoji:"⚡",
+    mascotType:"fierce",colorTags:["blue","gold"],
+    weather:"hot",size:"mid",vibe:"cool",
+    soccerEq:"Valencia CF",soccerLeague:"La Liga",
+    gmp:["Greece","Brazil"],
+    style:"Lightning bolt cool. Jim Harbaugh era. Justin Herbert patience rewarded. Always a playoff threat.",
+    underdog:false,building:false
+  },
+  "Cleveland Browns": {
+    conf:"AFC",div:"North",city:"Cleveland",colors:["#311D00","#FF3C00"],emoji:"🐕",
+    mascotType:"friendly",colorTags:["brown","orange"],
+    weather:"cold",size:"mid",vibe:"loyal",
+    soccerEq:"Middlesbrough",soccerLeague:"Championship",
+    gmp:["UK"],
+    style:"Most loyal fanbase. The Dawg Pound. Long-suffering but never quit. Joe Flacco miracle run legacy.",
+    underdog:true,building:true
+  }
+};
+
+// ─── QUESTIONS ────────────────────────────────────────────────────────────────
+const QUESTIONS = [
+  {
+    id:"country",
+    emoji:"🌍",
+    text:"Where are you from?",
+    sub:"We'll highlight teams with official marketing ties to your country through the NFL Global Markets Program.",
+    type:"country",
+  },
+  {
+    id:"colors",
+    emoji:"🎨",
+    text:"Which color scheme speaks to you?",
+    sub:"Pick the vibe that feels most like you.",
+    type:"grid",cols:3,
+    options:[
+      {icon:"🔴🟡",label:"Red & Gold",val:"red,gold"},
+      {icon:"🔵⬜",label:"Blue & White",val:"blue,white"},
+      {icon:"🟢🟡",label:"Green & Gold",val:"green,gold"},
+      {icon:"⬛🟡",label:"Black & Gold",val:"black,gold"},
+      {icon:"🔵⬛",label:"Blue & Black",val:"blue,black"},
+      {icon:"🟦🟠",label:"Navy & Orange",val:"blue,orange"},
+      {icon:"🟣🟡",label:"Purple & Gold",val:"purple,gold"},
+      {icon:"🔴⬛",label:"Red & Black",val:"red,black"},
+      {icon:"🟣⬜",label:"Purple & White",val:"purple,white"},
+    ]
+  },
+  {
+    id:"weather",
+    emoji:"🌤️",
+    text:"What's your ideal game-day weather?",
+    sub:"NFL teams play in wildly different climates — which suits your soul?",
+    type:"grid",cols:2,
+    options:[
+      {icon:"❄️",label:"Frozen tundra",sub:"Snow, ice, drama",val:"cold"},
+      {icon:"☀️",label:"Sunshine & heat",sub:"Warm, vibrant, loud",val:"hot"},
+      {icon:"🌧️",label:"Grey & moody",sub:"Rain, passion, grit",val:"cold"},
+      {icon:"🌤️",label:"Mild & perfect",sub:"Year-round comfort",val:"mild"},
+    ]
+  },
+  {
+    id:"mascot",
+    emoji:"🦁",
+    text:"Which type of mascot feels like you?",
+    sub:"Every team has a spirit — which one matches yours?",
+    type:"grid",cols:2,
+    options:[
+      {icon:"🦅",label:"Fierce predator",sub:"Eagle, Raven, Falcon",val:"fierce"},
+      {icon:"🏛️",label:"Historical legend",sub:"Patriots, Giants, Vikings",val:"historical"},
+      {icon:"🎭",label:"Cultural icon",sub:"Cowboys, Saints, Packers",val:"cultural"},
+      {icon:"☠️",label:"Edgy rebel",sub:"Raiders, Buccaneers",val:"edgy"},
+      {icon:"🐬",label:"Friendly & fun",sub:"Dolphins, Browns",val:"friendly"},
+      {icon:"⚙️",label:"Gritty & industrial",sub:"Steelers, Bears",val:"industrial"},
+    ]
+  },
+  {
+    id:"size",
+    emoji:"📣",
+    text:"What kind of fanbase do you want?",
+    sub:"Size and culture matter when you're picking a lifelong team.",
+    type:"grid",cols:2,
+    options:[
+      {icon:"🌎",label:"Global giant",sub:"Fans everywhere in the world",val:"big"},
+      {icon:"🏙️",label:"Major market",sub:"Big city, passionate base",val:"big"},
+      {icon:"❤️",label:"Tight-knit community",sub:"Loyal, local, fierce",val:"mid"},
+      {icon:"🌱",label:"Growing movement",sub:"Young, energetic, rising",val:"small"},
+    ]
+  },
+  {
+    id:"vibe",
+    emoji:"💭",
+    text:"What's your football identity?",
+    sub:"Pick the story you want to live.",
+    type:"grid",cols:2,
+    options:[
+      {icon:"👑",label:"Dynasty fan",sub:"I want to support greatness",val:"dynasty"},
+      {icon:"💪",label:"The underdog",sub:"I love a team that defies the odds",val:"underdog"},
+      {icon:"🔨",label:"Gritty & physical",sub:"Old-school hard-nosed football",val:"gritty"},
+      {icon:"✨",label:"Flashy & fun",sub:"Touchdowns, celebrations, style",val:"fun"},
+      {icon:"🏗️",label:"Building a future",sub:"I'm patient — I want to grow with a team",val:"building"},
+      {icon:"📜",label:"History & tradition",sub:"Legacy, championships, prestige",val:"tradition"},
+    ]
+  },
+  {
+    id:"soccer",
+    emoji:"⚽",
+    text:"Which type of football club do you support?",
+    sub:"We'll use this to find your NFL equivalent.",
+    type:"grid",cols:2,
+    options:[
+      {icon:"🏆",label:"European superclub",sub:"Real Madrid, Bayern, Barça type",val:"big_euro"},
+      {icon:"❤️",label:"Passionate mid-tier",sub:"Dortmund, Liverpool, Napoli",val:"passionate"},
+      {icon:"🛡️",label:"Defensive & gritty",sub:"Atletico Madrid, Juventus type",val:"defensive"},
+      {icon:"🌟",label:"Stylish & attacking",sub:"PSG, AC Milan, Ajax",val:"stylish"},
+      {icon:"🔥",label:"Underdog / lower league",sub:"Brighton, Aston Villa types",val:"underdog_soccer"},
+      {icon:"🆕",label:"I don't follow football / Soccer",sub:"Start fresh!",val:"none"},
+    ]
+  },
+  {
+    id:"atmosphere",
+    emoji:"🏟️",
+    text:"What game-day atmosphere do you crave?",
+    sub:"What makes the perfect NFL experience for you?",
+    type:"grid",cols:2,
+    options:[
+      {icon:"🔊",label:"Ear-splitting noise",sub:"Crowd that shakes the stadium",val:"loud"},
+      {icon:"🎉",label:"Party & celebration",sub:"Tailgates, music, fun",val:"fun"},
+      {icon:"😤",label:"Intense & hostile",sub:"Intimidating home fortress",val:"intense"},
+      {icon:"🎖️",label:"Rich in tradition",sub:"Rituals, history, legacy",val:"tradition"},
+    ]
+  },
+  {
+    id:"journey",
+    emoji:"🗺️",
+    text:"Finally — what kind of fan journey do you want?",
+    sub:"Be honest. There's no wrong answer.",
+    type:"grid",cols:1,
+    options:[
+      {icon:"🏆",label:"I want to support a winner right now",sub:"Give me rings and glory immediately",val:"winner"},
+      {icon:"🌱",label:"I want to grow with a young team",sub:"I'll be patient — I want to feel the journey",val:"grower"},
+      {icon:"😤",label:"I want a team that's been through it",sub:"Long-suffering, loyal, dramatic history",val:"suffered"},
+      {icon:"🌍",label:"I want the team closest to my home country",sub:"Give me the team that's building in my market",val:"local"},
+    ]
+  },
+];
+
+const COUNTRIES = [
+  {flag:"🇬🇧",name:"UK / England",val:"UK"},
+  {flag:"🇩🇪",name:"Germany",val:"Germany"},
+  {flag:"🇮🇪",name:"Ireland",val:"Ireland"},
+  {flag:"🇫🇷",name:"France",val:"France"},
+  {flag:"🇪🇸",name:"Spain",val:"Spain"},
+  {flag:"🇳🇱",name:"Netherlands",val:"Netherlands"},
+  {flag:"🇳🇴",name:"Norway",val:"Norway"},
+  {flag:"🇸🇪",name:"Sweden",val:"Sweden"},
+  {flag:"🇩🇰",name:"Denmark",val:"Denmark"},
+  {flag:"🇫🇮",name:"Finland",val:"Finland"},
+  {flag:"🇦🇺",name:"Australia",val:"Australia"},
+  {flag:"🇳🇿",name:"New Zealand",val:"New Zealand"},
+  {flag:"🇧🇷",name:"Brazil",val:"Brazil"},
+  {flag:"🇦🇷",name:"Argentina",val:"Argentina"},
+  {flag:"🇲🇽",name:"Mexico",val:"Mexico"},
+  {flag:"🇨🇴",name:"Colombia",val:"Colombia"},
+  {flag:"🇯🇵",name:"Japan",val:"Japan"},
+  {flag:"🇰🇷",name:"South Korea",val:"South Korea"},
+  {flag:"🇨🇳",name:"China",val:"China"},
+  {flag:"🇦🇪",name:"UAE",val:"UAE"},
+  {flag:"🇬🇷",name:"Greece",val:"Greece"},
+  {flag:"🇨🇦",name:"Canada",val:"Canada"},
+  {flag:"🇦🇹",name:"Austria",val:"Austria"},
+  {flag:"🇨🇭",name:"Switzerland",val:"Switzerland"},
+  {flag:"🌐",name:"Other / Worldwide",val:"other"},
+];
+
+// ─── SCORING ENGINE ───────────────────────────────────────────────────────────
+function scoreTeams(answers) {
+  const scores = {};
+  Object.keys(TEAMS).forEach(t => scores[t] = 0);
+
+  Object.entries(TEAMS).forEach(([name, t]) => {
+
+    // Country / GMP boost
+    if (answers.country && answers.country !== "other") {
+      if (t.gmp.includes(answers.country)) scores[name] += 30;
+    }
+
+    // Colors
+    if (answers.colors) {
+      const picked = answers.colors.split(",");
+      const matches = picked.filter(c => t.colorTags.includes(c)).length;
+      scores[name] += matches * 15;
+    }
+
+    // Weather
+    if (answers.weather && t.weather === answers.weather) scores[name] += 10;
+
+    // Mascot
+    if (answers.mascot && t.mascotType === answers.mascot) scores[name] += 12;
+
+    // Size
+    if (answers.size) {
+      if (answers.size === "big" && t.size === "big") scores[name] += 10;
+      if (answers.size === "mid" && (t.size === "mid" || t.size === "big")) scores[name] += 8;
+      if (answers.size === "small" && t.building) scores[name] += 10;
+    }
+
+    // Vibe
+    if (answers.vibe) {
+      const vibeMap = {
+        dynasty: ["dynasty"],
+        underdog: ["underdog","passionate"],
+        gritty: ["gritty","loyal"],
+        fun: ["fun","flashy","cool","wild"],
+        building: ["building","rising","hopeful"],
+        tradition: ["tradition","class","history"],
+      };
+      const matching = vibeMap[answers.vibe] || [];
+      if (matching.some(v => t.vibe.includes(v))) scores[name] += 12;
+    }
+
+    // Soccer equivalent
+    if (answers.soccer) {
+      const soccerMap = {
+        big_euro: ["big"],
+        passionate: ["mid"],
+        defensive: ["mid"],
+        stylish: ["mid","big"],
+        underdog_soccer: ["small","mid"],
+        none: [],
+      };
+      const allowed = soccerMap[answers.soccer] || [];
+      if (allowed.includes(t.size)) scores[name] += 8;
+    }
+
+    // Atmosphere
+    if (answers.atmosphere) {
+      const atmMap = {
+        loud: ["passionate","loud","gritty"],
+        fun: ["fun","flashy","culture","wild"],
+        intense: ["gritty","intense","loyal"],
+        tradition: ["tradition","class","dynasty","history"],
+      };
+      const matching = atmMap[answers.atmosphere] || [];
+      if (matching.some(v => t.vibe.includes(v))) scores[name] += 10;
+    }
+
+    // Journey
+    if (answers.journey) {
+      if (answers.journey === "winner" && !t.building && !t.underdog) scores[name] += 15;
+      if (answers.journey === "grower" && t.building) scores[name] += 18;
+      if (answers.journey === "suffered" && t.underdog) scores[name] += 18;
+      if (answers.journey === "local" && answers.country && t.gmp.includes(answers.country)) scores[name] += 25;
+    }
+  });
+
+  return Object.entries(scores).sort((a,b) => b[1]-a[1]);
+}
+
+// ─── APP STATE ────────────────────────────────────────────────────────────────
+let currentQ = 0;
+const answers = {};
+
+function render() {
+  const area = document.getElementById("quizArea");
+  const header = document.getElementById("quizHeader");
+
+  if (currentQ >= QUESTIONS.length) {
+    header.style.display = "none";
+    renderResult(area);
+    return;
+  }
+
+  header.style.display = "";
+  const q = QUESTIONS[currentQ];
+  const pct = Math.round((currentQ / QUESTIONS.length) * 100);
+
+  let optionsHTML = "";
+  if (q.type === "country") {
+    optionsHTML = `<div class="country-grid" id="optContainer">` +
+      COUNTRIES.map(c =>
+        `<div class="country-opt${answers.country===c.val?' selected':''}" data-val="${c.val}" onclick="selectCountry('${c.val}')">
+          <span class="country-flag">${c.flag}</span>${c.name}
+        </div>`
+      ).join("") + `</div>`;
+  } else {
+    const colClass = `cols-${q.cols||2}`;
+    optionsHTML = `<div class="options ${colClass}" id="optContainer">` +
+      q.options.map(o =>
+        `<div class="opt${answers[q.id]===o.val?' selected':''}" data-val="${o.val}" onclick="selectOpt('${q.id}','${o.val}',this)">
+          <span class="opt-icon">${o.icon}</span>
+          <span class="opt-text"><strong>${o.label}</strong>${o.sub?`<span>${o.sub}</span>`:""}</span>
+        </div>`
+      ).join("") + `</div>`;
+  }
+
+  const hasAnswer = answers[q.id] !== undefined;
+
+  area.innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span class="progress-label">Question ${currentQ+1} of ${QUESTIONS.length}</span>
+        <span class="progress-num">${pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="q-card">
+      <span class="q-emoji">${q.emoji}</span>
+      <div class="q-text">${q.text}</div>
+      <div class="q-sub">${q.sub}</div>
+      ${optionsHTML}
+      <div class="nav">
+        ${currentQ>0?`<button class="btn btn-back" onclick="goBack()">← Back</button>`:`<div></div>`}
+        <button class="btn btn-next" id="nextBtn" ${hasAnswer?"":"disabled"} onclick="goNext()">
+          ${currentQ===QUESTIONS.length-1?"See My Team 🏈":"Next →"}
+        </button>
+      </div>
+    </div>`;
+}
+
+function selectCountry(val) {
+  answers.country = val;
+  document.querySelectorAll(".country-opt").forEach(el => {
+    el.classList.toggle("selected", el.dataset.val === val);
+  });
+  document.getElementById("nextBtn").disabled = false;
+}
+
+function selectOpt(id, val, el) {
+  answers[id] = val;
+  document.querySelectorAll("#optContainer .opt").forEach(o => o.classList.remove("selected"));
+  el.classList.add("selected");
+  document.getElementById("nextBtn").disabled = false;
+}
+
+function goNext() {
+  if (answers[QUESTIONS[currentQ].id] === undefined && QUESTIONS[currentQ].type !== "country") return;
+  currentQ++;
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function goBack() {
+  if (currentQ > 0) { currentQ--; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+}
+
+function renderResult(area) {
+  const ranked = scoreTeams(answers);
+  const [topName, topScore] = ranked[0];
+  const topTeam = TEAMS[topName];
+  const maxScore = topScore;
+
+  const runnerUps = ranked.slice(1,5);
+  const countryName = COUNTRIES.find(c=>c.val===answers.country);
+  const hasGMP = topTeam.gmp.includes(answers.country);
+
+  const c1 = topTeam.colors[0], c2 = topTeam.colors[1]||"#333";
+
+  const ruCards = runnerUps.map(([n,s]) => {
+    const t = TEAMS[n];
+    return `<div class="ru-card">
+      <div class="ru-dot" style="background:${t.colors[0]}"></div>
+      <div><div class="ru-name">${n}</div><div class="ru-sub">${t.conf} · ${t.city}</div></div>
+    </div>`;
+  }).join("");
+
+  area.innerHTML = `<div class="result-wrap">
+    <div class="result-podium">
+      <div class="result-banner" style="--team-color1:${c1}33">
+        <div class="result-rank">🏈 Your NFL Team Match</div>
+        <div class="result-colors">
+          <div class="color-swatch" style="background:${c1}"></div>
+          <div class="color-swatch" style="background:${c2}"></div>
+        </div>
+        <div class="result-team-name">${topName}</div>
+        <div class="result-team-nick">${topTeam.city} · ${topTeam.conf} ${topTeam.div}</div>
+        <span class="result-emoji">${topTeam.emoji}</span>
+        ${hasGMP?`<div style="margin-top:14px"><span class="gmp-badge">✅ Official NFL team in ${countryName?countryName.name:answers.country}</span></div>`:""}
+      </div>
+      <div class="result-details">
+        <div class="detail-card" style="grid-column:1/-1">
+          <div class="detail-label">Why you match</div>
+          <div class="detail-val">${topTeam.style}</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-label">Soccer equivalent</div>
+          <div class="detail-val"><strong>${topTeam.soccerEq}</strong><br><span style="color:var(--muted);font-size:12px">${topTeam.soccerLeague}</span></div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-label">Conference</div>
+          <div class="detail-val"><strong>${topTeam.conf} ${topTeam.div}</strong><br><span style="color:var(--muted);font-size:12px">${topTeam.weather==="cold"?"Cold weather 🥶":topTeam.weather==="hot"?"Warm weather ☀️":"Mild weather 🌤️"}</span></div>
+        </div>
+        ${topTeam.gmp.length?`
+        <div class="detail-card" style="grid-column:1/-1">
+          <div class="detail-label">Global Markets Program</div>
+          <div class="detail-val">Official NFL presence in: <strong>${topTeam.gmp.join(", ")}</strong></div>
+          <div class="score-bar-wrap">
+            <div class="score-bar"><div class="score-fill" style="width:${Math.round((topScore/maxScore)*100)}%"></div></div>
+          </div>
+        </div>`:""}
+      </div>
+    </div>
+
+    <div class="runner-up-section">
+      <div class="runner-up-label">Also consider…</div>
+      <div class="runner-up-cards">${ruCards}</div>
+    </div>
+
+    <button class="restart-btn" onclick="restartQuiz()">🔄 Retake the quiz</button>
+  </div>`;
+}
+
+function restartQuiz() {
+  currentQ = 0;
+  Object.keys(answers).forEach(k => delete answers[k]);
+  document.getElementById("quizHeader").style.display = "";
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// Start
+render();
+</script>
+</body>
+</html>
